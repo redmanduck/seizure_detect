@@ -5,21 +5,20 @@
 #define BASELINE_MEAN 116
 
 void print_r(char * bf, int blen);
-int detect_seizure(char * bf);
+int detect_seizure(unsigned char * bf);
 int switch_count(char * window, int winsize);
-double xrms(char * M, int len);
+double xrms(unsigned char * M, int len);
 
-int main(int argc, char *argv[]){
+int main(int argc, unsigned char *argv[]){
   printf("Opening %s..\n" , argv[1]);
-
   FILE * fp = fopen(argv[1], "rb");
   FILE * fo = fopen("output.csv", "w");
   if(fp == NULL){
      printf("Unable to open file\n\n");
      return 1;
   }
-  
-  char buffer[WINDOW_SIZE]; //use char because we want only 1 byte
+    
+  unsigned char buffer[WINDOW_SIZE]; //use unsigned char because we want only 1 byte
   int bytes_read = 0;
   int total_bytes_read = 0;
   int n = 1;
@@ -43,20 +42,23 @@ int main(int argc, char *argv[]){
   fclose(fo);
 }
 
-double xrms(char * M, int length){
+double xrms(unsigned char * M, int length){
   int i = 0;
   int sum = 0;
   for(i = 0; i < length; i++){
     int point = M[i];
+    printf("%d (0x%x),  ", point, point);
     sum += point;
+    printf("<-[%d]  ", sum);
+
   }
+  printf("SUM=%d",sum); //got sum/len = ~23 in matlab
   return (double)sum/length; // ;/length
 }
 
 int switch_count(char * M, int winsize){
    int k = 0;
    int j =0;
-   //print_r(M, winsize); 	
    for(j = 0; j < winsize; j++){
      if(M[j] > 0 && M[j+1] < 0){
         k++;
@@ -68,20 +70,23 @@ int switch_count(char * M, int winsize){
    }
    return k;
 }
-
-int detect_seizure(char * onewindow){
+/*
+ *
+ *  seizure detection
+ */
+int detect_seizure(unsigned char * onewindow){
    int i = 0;
    char reduced[WINDOW_SIZE]; 
-   char squared[WINDOW_SIZE];
+   unsigned char squared[WINDOW_SIZE];
    for(i = 0; i < WINDOW_SIZE; i++){
-     reduced[i] = 0xFF&onewindow[i] - BASELINE_MEAN; 
-     squared[i] = ((onewindow[i]&0xFF) - BASELINE_MEAN)*((onewindow[i]&0xFF) - BASELINE_MEAN);
+     reduced[i] = onewindow[i] - BASELINE_MEAN;
+     squared[i] = reduced[i] * reduced[i];
    }
-   
+  // print_r(squared, WINDOW_SIZE); 
    int num_switch = switch_count(reduced, WINDOW_SIZE);
    double xr = xrms(squared, WINDOW_SIZE);
-   printf("rms:%.3f (%d), num_switch : %d (%d)\n", xr, THRES/WINDOW_SIZE, num_switch, MAX_SWITCH);
-   if( xr < THRES/WINDOW_SIZE){ // || num_switch > MAX_SWITCH
+   printf("rms: %.3f (%d), num_switch: %d (%d)\n", xr, THRES/WINDOW_SIZE, num_switch, MAX_SWITCH);
+   if( xr < THRES/WINDOW_SIZE || num_switch > MAX_SWITCH){ // || num_switch > MAX_SWITCH
       return 0;
    }
    printf("Seizure found");
@@ -96,6 +101,6 @@ int detect_seizure(char * onewindow){
 void print_r(char *buffer, int blen){
   int i = 0;
   for(i = 0; i< blen; i++){
-    printf("(%d,%d), ", i,buffer[i] );
+    printf("(%d,%x,%d), ", i,buffer[i],buffer[i] );
   }
 }
