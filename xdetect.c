@@ -1,8 +1,8 @@
 #include <stdio.h>
 #define WINDOW_SIZE 512
-#define THRES 40000
-#define MAX_SWITCH 28
-#define BASELINE_MEAN 116
+#define THRES 80
+#define MAX_SWITCH 40
+#define BASELINE_MEAN 117
 
 void print_r(char * bf, int blen);
 int detect_seizure(unsigned char * bf);
@@ -47,10 +47,9 @@ double xrms(unsigned char * M, int length){
   int sum = 0;
   for(i = 0; i < length; i++){
     int point = M[i];
-    printf("%d (0x%x),  ", point, point);
+    //printf("%d (0x%x),  ", point, point);
     sum += point;
-    printf("<-[%d]  ", sum);
-
+    //printf("<-[%d]  ", sum);
   }
   printf("SUM=%d",sum); //got sum/len = ~23 in matlab
   return (double)sum/length; // ;/length
@@ -82,14 +81,15 @@ int detect_seizure(unsigned char * onewindow){
      reduced[i] = onewindow[i] - BASELINE_MEAN;
      squared[i] = reduced[i] * reduced[i];
    }
-  // print_r(squared, WINDOW_SIZE); 
+   print_r(reduced, WINDOW_SIZE); 
    int num_switch = switch_count(reduced, WINDOW_SIZE);
    double xr = xrms(squared, WINDOW_SIZE);
-   printf("rms: %.3f (%d), num_switch: %d (%d)\n", xr, THRES/WINDOW_SIZE, num_switch, MAX_SWITCH);
+   printf("RMS: %.3f (%d), num_switch: %d (%d)", xr, THRES/WINDOW_SIZE, num_switch, MAX_SWITCH);
    if( xr < THRES/WINDOW_SIZE || num_switch > MAX_SWITCH){ // || num_switch > MAX_SWITCH
+      printf("\n");
       return 0;
    }
-   printf("Seizure found");
+   printf("[ Seizure flagged ]\n");
    return 1;
 }
 
