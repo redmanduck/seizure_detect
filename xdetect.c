@@ -1,3 +1,7 @@
+/*
+ *   BME301 Group 1 - S. Sabpisal, P. Marshall, C. Kuntz, H. Bulava, Paolo L.
+ */
+
 #include <stdio.h>
 #define WINDOW_SIZE 512
 #define THRES 80
