@@ -10,8 +10,8 @@
 
 void print_r(char * bf, int blen);
 int detect_seizure(unsigned char * bf);
-int switch_count(char * window, int winsize);
-double xrms(unsigned char * M, int len);
+int switch_count(char * window, int winsize , int offset, int first);
+double xrms(unsigned char * M, int length);
 
 int main(int argc, unsigned char *argv[]){
   FILE * fp = fopen(argv[1], "rb");
@@ -37,24 +37,21 @@ int main(int argc, unsigned char *argv[]){
 
 /*
  *  Magnitude Approximation
- *
  */
 
 double xrms(unsigned char * M, int length){
-  int i = 0, sum = 0;
-  for(i = 0; i < length; i++){  sum += (int)(M[i]*M[i]); }
-  return (double)sum/length; // ;/length
+	int i = 0, sum = 0;
+	for(i = 0; i < length; i++) sum += (int)(M[i]*M[i]); 
+	return (double)sum/length; // ;/length
 }
 
 /*
  *  Frequency Approximation 
  */
-int switch_count(char * M, int winsize){
-   int k = 0, j =0;
-   for(j = 0; j < winsize; j++){
-     k += ((M[j] >0 && M[j+1] <0)||( M[j] <0&&M[j+1]>0)||M[j]==0) ? 1 : 0;
-   }
-   return k;
+
+int switch_count(char *M, int winsize, int accum, int j){
+  if(winsize == 0) return accum;
+  return switch_count(M, winsize - 1, accum + ((M[j] >0 && M[j+1] <0)||( M[j] <0&&M[j+1]>0)||M[j]==0), j + 1); 
 }
 
 /*
@@ -63,10 +60,6 @@ int switch_count(char * M, int winsize){
 int detect_seizure(unsigned char * onewindow){
    int i = 0;
    char reduced[WINDOW_SIZE]; 
-   for(i = 0; i < WINDOW_SIZE; i++)
-     reduced[i] = onewindow[i] - BASELINE_MEAN;
-   int num_switch = switch_count(reduced, WINDOW_SIZE);
-   double xr = xrms(reduced , WINDOW_SIZE);
-   return !(xr < THRES/WINDOW_SIZE || num_switch > MAX_SWITCH);
-}
-
+   for(i = 0; i < WINDOW_SIZE; i++) reduced[i] = onewindow[i] - BASELINE_MEAN;
+   return (xrms(reduced , WINDOW_SIZE) < (double)THRES || switch_count(reduced, WINDOW_SIZE, 0, 0) > MAX_SWITCH);     //TODO: check that THRESHOLD, it doesn't do anything
+}	
