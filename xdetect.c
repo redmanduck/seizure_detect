@@ -61,5 +61,5 @@ int detect_seizure(unsigned char * onewindow){
    int i = 0;
    char reduced[WINDOW_SIZE]; 
    for(i = 0; i < WINDOW_SIZE; i++) reduced[i] = onewindow[i] - BASELINE_MEAN;
-   return (xrms(reduced , WINDOW_SIZE) < (double)THRES || switch_count(reduced, WINDOW_SIZE, 0, 0) > MAX_SWITCH);     //TODO: check that THRESHOLD, it doesn't do anything
+   return !(xrms(reduced , WINDOW_SIZE) < THRES/WINDOW_SIZE || switch_count(reduced, WINDOW_SIZE, 0, 0) > MAX_SWITCH);     //TODO: check that THRESHOLD, it doesn't do anything
 }	
